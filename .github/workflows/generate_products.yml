@@ -10,13 +10,13 @@ on:
     - cron: '34 14 */3 * 2'
   workflow_dispatch:
     inputs:
-      build_latest:
+      build_armhf:
         description: 'Build armhf-Packages?'
         required: true
         options: [ 'yes', 'no' ]
         type: choice
         default: 'yes'
-      build_esr:
+      build_arm64:
         description: 'Build arm64-Packages?'
         required: true
         options: [ 'yes', 'no' ]
