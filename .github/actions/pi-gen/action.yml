@@ -1,0 +1,154 @@
+name: generate_products_action
+description: Action to generate pi-gen images for a specific target OS. (only run this with a container image)
+
+inputs:
+  # Actions cannot access secrets so pass them in as inputs
+  pi_release:
+    required: true
+    description: The pi release to use to get the debian release
+  pi_arch:
+    required: true
+    description: The pi arch to use to get the debian release (e.g. armhf or arm64)
+  github_token:
+    required: true
+    description: The GitHub token to use for accessing the repository
+  repository:
+    required: false
+    description: The repository to save the cache
+    default: ${{ github.repository }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.pi_release }}"    ]] || { echo "pi_release input is empty"    ; exit 1; }
+        [[ "${{ inputs.pi_arch }}"       ]] || { echo "pi_arch input is empty"       ; exit 1; }
+        [[ "${{ inputs.github_token }}"  ]] || { echo "github_token input is empty"  ; exit 1; }
+        [[ "${{ inputs.repository }}"    ]] || { echo "repository input is empty"    ; exit 1; }
+
+    - name: sleep
+      shell: bash
+      run: |
+        SLEEP="$((1 + $(od -A n -t d -N 2 /dev/urandom | tr -d ' ') % 9))"
+        echo "Sleeping $SLEEP seconds ..."
+        sleep $SLEEP
+
+    - name: key
+      id: key
+      shell: bash
+      run: |
+        export KEY="${GITHUB_WORKFLOW%-*}"
+        echo "key=$KEY" >> $GITHUB_OUTPUT
+        echo "################################################################" && bash -c "echo KEY=$KEY"
+
+        export RELEASE="${{ inputs.pi_release }}"
+        echo "release=$RELEASE" >> $GITHUB_OUTPUT
+        echo "################################################################" && bash -c "echo RELEASE=$RELEASE"
+
+        export IMAGE="${{ inputs.pi_image }}"
+        echo "image=$IMAGE" >> $GITHUB_OUTPUT
+        echo "################################################################" && bash -c "echo IMAGE=$IMAGE"
+
+        export ARCH="${{ inputs.pi_arch }}"
+        echo "arch=$ARCH" >> $GITHUB_OUTPUT
+        echo "################################################################" && bash -c "echo ARCH=$ARCH"
+
+    - name: update
+      shell: bash
+      run: apt-get -y update && apt-get -y upgrade && apt-get -y dist-upgrade
+
+    - name: install
+      shell: bash
+      run: |
+        DEBIAN_FRONTEND=noninteractive apt-get -y install \
+          git locales \
+            coreutils quilt parted qemu-user-static debootstrap zerofree zip \
+            dosfstools libarchive-tools libcap2-bin grep rsync xz-utils file git curl bc \
+            gpg pigz xxd arch-test bmap-tools \
+            kmod e2fsprogs
+
+#    - name: locale
+#      shell: bash
+#      run: locale-gen en_US.utf8 && locale-gen de_DE.UTF-8 && update-locale
+
+    - name: clone
+      shell: bash
+      env:
+        PIGEN_READING_FILE: raw/refs/heads/master/build.sh
+        PIGEN_REPOSITORY: https://github.com/RPi-Distro/pi-gen
+      run: |
+        LATEST_DEBIAN_RELEASE=$(curl -fsSL ${PIGEN_REPOSITORY}/${PIGEN_READING_FILE} | grep -oP '(?<=\{RELEASE:-)[^}]+')
+
+        git config --global --add safe.directory $GITHUB_WORKSPACE
+
+        if [[ "${{ inputs.pi_release }}" = "${LATEST_DEBIAN_RELEASE}" ]]; then
+          if [[ "${{ inputs.pi_arch }}" = "arm64" ]]; then
+            PIGEN_BRANCH="arm64"
+          else
+            PIGEN_BRANCH="master"
+          fi
+        else
+          if [[ "${{ inputs.pi_arch }}" = "arm64" ]]; then
+            PIGEN_BRANCH="${{ inputs.pi_release }}-arm64"
+          else
+            PIGEN_BRANCH="${{ inputs.pi_release }}"
+          fi
+        fi
+
+        git clone $PIGEN_REPOSITORY $GITHUB_WORKSPACE --branch $PIGEN_BRANCH --depth=1 --single-branch
+
+    - name: prepare
+      shell: bash
+      run: |
+        rm -rf stage5
+
+    - name: generate
+      shell: bash
+      run: |
+        #export LANG=en_US.utf8
+        [ "${{ github.workflow }}" != "${{ steps.key.outputs.key }}" ] && c=5 || c=1
+        seq $c | while read x; do RELEASE=${{ inputs.pi_release }} DEPLOY_COMPRESSION=xz ./build.sh; done
+
+    - name: after prepare
+      shell: bash
+      run: |
+        cd ./deploy
+        for file in *.img.xz; do
+          if [[ -f "$file" ]]; then
+            size=$(stat -c %s "$file")
+            if (( size > 1920*1024*1024 )); then
+              echo "Processing $file (size: $size bytes > 1920MB)"
+              split -b 1920M  "$file" "$file."
+              rm "$file"
+            else
+              echo "$file is smaller than 1920 MB, splitting is skipped."
+            fi
+          fi
+        done
+
+    - name: Delete existing tag
+      uses: dev-drprasad/delete-tag-and-release@v1.1
+      continue-on-error: true
+      with:
+        tag_name: "${{ inputs.pi_arch }}-${{ inputs.pi_release }}"
+        github_token: ${{ inputs.github_token }}
+        delete_release: true
+        repo: ${{ inputs.repository }}
+
+    - name: Publish release files
+      uses: softprops/action-gh-release@v2
+      with:
+        token: "${{ inputs.github_token }}"
+        tag_name: "${{ inputs.pi_arch }}-${{ inputs.pi_release }}"
+        generate_release_notes: false
+        prerelease: false
+        title: "rpi image for ${{ inputs.pi_arch }}-${{ inputs.pi_release }}"
+        files: |
+          ./deploy/*
+        body: |
+          ### ${{ inputs.pi_arch }} rpi image for ${{ inputs.pi_arch }}-${{ inputs.pi_release }}
+          - This package was generated by the pi-gen GitHub Action.
+          - The files are downloadable in the Assets.
+          - For more information, see the [README.md in the repository](https://github.com/${{ inputs.repository }}/blob/${{ github.ref }}/README.md).
