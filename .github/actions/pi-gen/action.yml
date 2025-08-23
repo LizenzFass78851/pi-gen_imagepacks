@@ -98,7 +98,14 @@ runs:
     - name: prepare
       shell: bash
       run: |
-        rm -rf stage5
+        # disable full build stage
+        touch ./stage5/SKIP
+        touch ./stage5/SKIP_IMAGES
+        # create config
+        NOW=$(date +"%Y-%m-%d-%H%M")
+        IMAGE=Raspbian-${GITHUB_REF##*/}-$NOW
+        touch config
+        echo IMG_NAME=$IMAGE >> config
 
     - name: generate
       shell: bash
@@ -109,13 +116,14 @@ runs:
     - name: after prepare
       shell: bash
       run: |
+        # split bigger files
         cd ./deploy
         for file in *.img.xz; do
           if [[ -f "$file" ]]; then
             size=$(stat -c %s "$file")
             if (( size > 1920*1024*1024 )); then
               echo "Processing $file (size: $size bytes > 1920MB)"
-              split -b 1920M  "$file" "$file."
+              split -b 1920M --numeric-suffixes=1 --suffix-length=3 "$file" "$file."
               rm "$file"
             else
               echo "$file is smaller than 1920 MB, splitting is skipped."
