@@ -64,9 +64,10 @@ runs:
       run: |
         DEBIAN_FRONTEND=noninteractive apt-get -y install \
           git vim parted \
-          quilt coreutils qemu-user-static debootstrap zerofree zip dosfstools e2fsprogs\
+          quilt coreutils qemu-user-static debootstrap zerofree zip dosfstools e2fsprogs \
           libarchive-tools libcap2-bin rsync grep udev xz-utils curl xxd file kmod bc \
           binfmt-support ca-certificates fdisk gpg pigz arch-test \
+          qemu-utils kpartx \
         && rm -rf /var/lib/apt/lists/*
 
     - name: clone
@@ -99,8 +100,7 @@ runs:
       shell: bash
       run: |
         # disable full build stage
-        touch ./stage5/SKIP
-        touch ./stage5/SKIP_IMAGES
+        rm -rf ./stage5
         # create config
         touch config
         echo IMG_NAME=raspios-${{ inputs.pi_release }}-${{ inputs.pi_arch }} >> config
