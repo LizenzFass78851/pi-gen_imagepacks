@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [buster, bullseye, bookworm, trixie]
+        release: [bullseye, bookworm, trixie]
     runs-on: ubuntu-24.04-arm
     env:           
       PI_ARCH: armhf
