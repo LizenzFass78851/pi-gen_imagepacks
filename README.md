@@ -10,7 +10,6 @@ See the [releases](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases
 ## armhf Update Packs
 | Release | Link |
 |:------------------:|:--------------:|
-| Buster | [armhf-buster](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases/tag/armhf-buster) |
 | Bullseye | [armhf-bullseye](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases/tag/armhf-bullseye) |
 | Bookworm | [armhf-bookworm](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases/tag/armhf-bookworm) |
 | Trixie | [armhf-trixie](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases/tag/armhf-trixie) |
