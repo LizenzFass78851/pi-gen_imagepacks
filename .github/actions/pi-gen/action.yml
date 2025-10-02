@@ -65,15 +65,14 @@ runs:
           binfmt-support ca-certificates qemu-utils kpartx fdisk gpg pigz arch-test \
         && rm -rf /var/lib/apt/lists/*
 
-    - name: clone
+    - name: prepare before clone
+      id: prepare-before-clone
       shell: bash
       env:
         PIGEN_READING_FILE: raw/refs/heads/master/build.sh
-        PIGEN_REPOSITORY: https://github.com/RPi-Distro/pi-gen
+        PIGEN_REPOSITORY: RPi-Distro/pi-gen
       run: |
-        LATEST_DEBIAN_RELEASE=$(curl -fsSL ${PIGEN_REPOSITORY}/${PIGEN_READING_FILE} | grep -oP '(?<=\{RELEASE:-)[^}]+')
-
-        git config --global --add safe.directory $GITHUB_WORKSPACE
+        LATEST_DEBIAN_RELEASE=$(curl -fsSL ${GITHUB_SERVER_URL##*/}/${PIGEN_REPOSITORY}/${PIGEN_READING_FILE} | grep -oP '(?<=\{RELEASE:-)[^}]+')
 
         if [[ "${{ inputs.pi_release }}" = "${LATEST_DEBIAN_RELEASE}" ]]; then
           if [[ "${{ inputs.pi_arch }}" = "arm64" ]]; then
@@ -89,7 +88,15 @@ runs:
           fi
         fi
 
-        git clone $PIGEN_REPOSITORY $GITHUB_WORKSPACE --branch $PIGEN_BRANCH --depth=1 --single-branch
+        echo "pigen_repository=$PIGEN_REPOSITORY" >> $GITHUB_OUTPUT
+        echo "pigen_branch=$PIGEN_BRANCH"         >> $GITHUB_OUTPUT
+
+    - name: clone
+      uses: actions/checkout@v5
+      with:
+        token: ${{ inputs.github_token }}
+        repository: ${{ steps.prepare-before-clone.outputs.pigen_repository }}
+        ref: ${{ steps.prepare-before-clone.outputs.pigen_branch }}        
 
     - name: prepare
       shell: bash
