@@ -26,7 +26,11 @@ on:
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
-    
+
+env:
+  COMPARE_FILE0: /tmp/.compare-0.txt
+  COMPARE_FILE1: /tmp/.compare-1.txt
+
 jobs:
   build_armhf:
     container:
@@ -49,6 +53,8 @@ jobs:
           pi_release: ${{ matrix.release }}
           pi_arch: ${{ env.PI_ARCH }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          compare_file0: ${{ env.COMPARE_FILE0 }}
+          compare_file1: ${{ env.COMPARE_FILE1 }}
           repository: ${{ github.repository }}
 
   build_arm64:
@@ -72,4 +78,6 @@ jobs:
           pi_release: ${{ matrix.release }}
           pi_arch: ${{ env.PI_ARCH }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          compare_file0: ${{ env.COMPARE_FILE0 }}
+          compare_file1: ${{ env.COMPARE_FILE1 }}
           repository: ${{ github.repository }}
