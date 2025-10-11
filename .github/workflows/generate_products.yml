@@ -22,6 +22,12 @@ on:
         options: [ 'yes', 'no' ]
         type: choice
         default: 'yes'
+      recache:
+        description: 'Delete Cache before Build?'
+        required: false
+        options: [ 'yes', 'no' ]
+        type: choice
+        default: 'no'
 
 concurrency:
   group: ${{ github.workflow }}
@@ -32,6 +38,44 @@ env:
   COMPARE_FILE1: /tmp/.compare-1.txt
 
 jobs:
+
+  clear_cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clear_cache
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ONWER: ${{ github.repository_owner }}
+          GH_REPO: ${{ github.event.repository.name }}
+        shell: bash
+        run: |
+          set -e +o pipefail
+          if [ "${{ github.event.inputs.recache }}" == "yes" ]; then
+            echo "Recache selected - Deleting all caches for this workflow ..."
+            while :; do
+                JSON_OUTPUT=$(curl \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    -H "Authorization: token $GH_TOKEN" \
+                    https://api.github.com/repos/$GH_ONWER/$GH_REPO/actions/caches)
+                GH_CACHE_IDS=$(echo "$JSON_OUTPUT" | jq '.actions_caches[] | {id: .id}' | grep "id" | cut -d ':' -f 2 | cut -c 2-)
+                if [ -z "$GH_CACHE_IDS" ]; then
+                    echo "No cache IDs left, end the loop."
+                    break
+                fi
+                for GH_CACHE_ID in $GH_CACHE_IDS; do
+                    echo "Delete Cache-ID: $GH_CACHE_ID"
+                    curl \
+                        -X DELETE \
+                        -H "Accept: application/vnd.github.v3+json" \
+                        -H "Authorization: token $GH_TOKEN" \
+                        https://api.github.com/repos/$GH_ONWER/$GH_REPO/actions/caches/$GH_CACHE_ID
+                done
+                sleep 5
+            done
+          else
+            echo "::warning::No recache selected - Skipping cache deletion ..."
+          fi
+
   build_armhf:
     container:
       image: debian:trixie-slim
@@ -43,7 +87,8 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:           
       PI_ARCH: armhf
-    if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' && github.event.inputs.build_armhf != 'no' }}
+    needs: clear_cache
+    if: ${{ needs.clear_cache.result != 'failure' && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && github.event.inputs.build_armhf != 'no' }}
 
     steps:
 
@@ -68,7 +113,8 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:           
       PI_ARCH: arm64
-    if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' && github.event.inputs.build_arm64 != 'no' }}
+    needs: clear_cache
+    if: ${{ needs.clear_cache.result != 'failure' && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && github.event.inputs.build_arm64 != 'no' }}
 
     steps:
 
