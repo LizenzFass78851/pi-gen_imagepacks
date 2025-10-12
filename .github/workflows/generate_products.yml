@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/generate_products.yml'
       - '.github/actions/pi-gen/**'
+      - '.github/actions/clear_cache/**'
   schedule:
     - cron: '34 14 */3 * 2'
   workflow_dispatch:
@@ -43,39 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' }}
     steps:
+
       - name: clear_cache
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_ONWER: ${{ github.repository_owner }}
-          GH_REPO: ${{ github.event.repository.name }}
-        shell: bash
-        run: |
-          set -e +o pipefail
-          if [ "${{ github.event.inputs.recache }}" == "yes" ]; then
-            echo "Recache selected - Deleting all caches for this workflow ..."
-            while :; do
-                JSON_OUTPUT=$(curl \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    -H "Authorization: token $GH_TOKEN" \
-                    https://api.github.com/repos/$GH_ONWER/$GH_REPO/actions/caches)
-                GH_CACHE_IDS=$(echo "$JSON_OUTPUT" | jq '.actions_caches[] | {id: .id}' | grep "id" | cut -d ':' -f 2 | cut -c 2-)
-                if [ -z "$GH_CACHE_IDS" ]; then
-                    echo "No cache IDs left, end the loop."
-                    break
-                fi
-                for GH_CACHE_ID in $GH_CACHE_IDS; do
-                    echo "Delete Cache-ID: $GH_CACHE_ID"
-                    curl \
-                        -X DELETE \
-                        -H "Accept: application/vnd.github.v3+json" \
-                        -H "Authorization: token $GH_TOKEN" \
-                        https://api.github.com/repos/$GH_ONWER/$GH_REPO/actions/caches/$GH_CACHE_ID
-                done
-                sleep 5
-            done
-          else
-            echo "::warning::No recache selected - Skipping cache deletion ..."
-          fi
+        uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/clear_cache@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repository_onwer: ${{ github.repository_owner }}
+          repository_name: ${{ github.event.repository.name }}
+          recache: ${{ github.event.inputs.recache }}
 
   build_armhf:
     container:
