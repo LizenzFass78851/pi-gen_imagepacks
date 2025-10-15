@@ -65,7 +65,7 @@ jobs:
     env:           
       PI_ARCH: armhf
     needs: clear_cache
-    if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_armhf != 'no' }}
+    if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_armhf != 'no' }}
 
     steps:
 
@@ -91,7 +91,7 @@ jobs:
     env:           
       PI_ARCH: arm64
     needs: clear_cache
-    if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_arm64 != 'no' }}
+    if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_arm64 != 'no' }}
 
     steps:
 
