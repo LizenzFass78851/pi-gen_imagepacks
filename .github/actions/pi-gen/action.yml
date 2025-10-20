@@ -43,8 +43,8 @@ runs:
         echo "Sleeping $SLEEP seconds ..."
         sleep $SLEEP
 
-    - name: key
-      id: key
+    - name: env
+      id: env
       shell: bash
       run: |
         export KEY="${GITHUB_WORKFLOW%-*}"
@@ -70,9 +70,11 @@ runs:
       run: apt-get -y update && apt-get -y upgrade && apt-get -y dist-upgrade
 
     - name: install
+      env:
+        DEBIAN_FRONTEND: noninteractive
       shell: bash
       run: |
-        DEBIAN_FRONTEND=noninteractive apt-get -y install \
+        apt-get -y install \
           git vim parted \
           quilt coreutils qemu-user-static debootstrap zerofree zip dosfstools e2fsprogs \
           libarchive-tools libcap2-bin rsync grep udev xz-utils curl xxd file kmod bc \
@@ -84,9 +86,9 @@ runs:
       with:
         path: |
           ${{ inputs.compare_file0 }}
-        key: ${{ steps.key.outputs.keymatrix }}-${{ steps.key.outputs.timestamp }}
+        key: ${{ steps.env.outputs.keymatrix }}-${{ steps.env.outputs.timestamp }}
         restore-keys: |
-          ${{ steps.key.outputs.keymatrix }}-
+          ${{ steps.env.outputs.keymatrix }}-
 
     - name: prepare before clone
       id: prepare-before-clone
@@ -160,8 +162,7 @@ runs:
       shell: bash
       if: steps.compare.outputs.latest_version != 'true'
       run: |
-        [ "${{ github.workflow }}" != "${{ steps.key.outputs.key }}" ] && c=5 || c=1
-        seq $c | while read x; do ./build.sh; done
+        ./build.sh
 
     - name: after prepare
       shell: bash
@@ -215,4 +216,4 @@ runs:
       with:
         path: |
           ${{ inputs.compare_file0 }}
-        key: ${{ steps.key.outputs.keymatrix }}-${{ steps.key.outputs.timestamp }}
+        key: ${{ steps.env.outputs.keymatrix }}-${{ steps.env.outputs.timestamp }}
