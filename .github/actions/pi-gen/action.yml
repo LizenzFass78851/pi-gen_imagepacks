@@ -139,7 +139,7 @@ runs:
 
     - name: clone
       if: steps.compare.outputs.latest_version != 'true'
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         token: ${{ inputs.github_token }}
         repository: ${{ steps.prepare-before-clone.outputs.pigen_repository }}
