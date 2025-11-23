@@ -201,6 +201,7 @@ runs:
         tag_name: "${{ inputs.pi_arch }}-${{ inputs.pi_release }}"
         generate_release_notes: false
         prerelease: false
+        draft: false
         name: "rpi image for ${{ inputs.pi_arch }}-${{ inputs.pi_release }}"
         files: |
           ./deploy/*
