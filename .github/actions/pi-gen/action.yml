@@ -203,16 +203,16 @@ runs:
       shell: sh
       env:
         GH_TOKEN: ${{ inputs.github_token }}
-        GH_ONWER_REPO: ${{ inputs.repository }}
+        GH_OWNER_REPO: ${{ inputs.repository }}
       if: steps.compare.outputs.latest_version != 'true'
       continue-on-error: true
-      run: gh release delete "${{ inputs.pi_arch }}-${{ inputs.pi_release }}" --cleanup-tag --yes --repo $GH_ONWER_REPO
+      run: gh release delete "${{ inputs.pi_arch }}-${{ inputs.pi_release }}" --cleanup-tag --yes --repo $GH_OWNER_REPO
 
     - name: Publish release files
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github_token }}
-        GH_ONWER_REPO: ${{ inputs.repository }}
+        GH_OWNER_REPO: ${{ inputs.repository }}
       if: steps.compare.outputs.latest_version != 'true'
       run: |
         # create release-notes
@@ -230,7 +230,7 @@ runs:
           --prerelease=false \
           --draft=false \
           --latest=true \
-          --repo "$GH_ONWER_REPO" \
+          --repo "$GH_OWNER_REPO" \
           $(find ./deploy/* -type f \( -name "*.img.xz" -o -name "*.info" \))
 
     - name: cache_save
