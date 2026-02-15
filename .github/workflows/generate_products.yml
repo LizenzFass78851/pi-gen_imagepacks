@@ -41,7 +41,7 @@ env:
 jobs:
 
   clear_cache:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' }}
     permissions:
       actions: write
