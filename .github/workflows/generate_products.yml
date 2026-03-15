@@ -63,11 +63,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: [bullseye, bookworm, trixie]
+        release: [buster, bullseye, bookworm, trixie]
     runs-on: ubuntu-24.04-arm
     env:           
       PI_ARCH: armhf
-    needs: clear_cache
+    needs: [ clear_cache ]
     if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_armhf != 'no' }}
 
     steps:
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:           
       PI_ARCH: arm64
-    needs: clear_cache
+    needs: [ clear_cache, build_armhf ]
     if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_arm64 != 'no' }}
 
     steps:
