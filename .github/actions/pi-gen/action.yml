@@ -171,6 +171,7 @@ runs:
         ref: ${{ steps.prepare-before-clone.outputs.pigen_branch }}        
 
     - name: prepare
+      id: prepare
       shell: bash
       if: steps.compare.outputs.latest_version != 'true'
       run: |
@@ -188,15 +189,20 @@ runs:
         # fix apt sources for older releases
         if curl -s -o /dev/null -w "%{http_code}" "http://raspbian.raspberrypi.org/raspbian/dists/${{ inputs.pi_release }}/Release" | grep -q "404"; then
           find . -type f ! -path "./.git/*" -print0 | xargs -0 sed -E -i 's#raspbian.raspberrypi.org#legacy.raspbian.org#g'
+          echo "LEGACY_SOURCES_LIST=true" >> $GITHUB_OUTPUT
         fi
         # fix other problems
         find . -type d -path "*bookshelf*" -print0 | head -n1 | xargs -0 rm -rf
 
     - name: generate
-      shell: bash
       if: steps.compare.outputs.latest_version != 'true'
-      run: |
-        ./build.sh
+      uses: nick-fields/retry@v4
+      with:
+        timeout_minutes: 360 # 6 hours
+        max_attempts: ${{ steps.prepare.outputs.LEGACY_SOURCES_LIST == 'true' && 5 || 1 }}
+        retry_wait_seconds: 30
+        shell: bash
+        command: ./build.sh
 
     - name: after prepare
       shell: bash
