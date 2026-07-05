@@ -61,10 +61,6 @@ runs:
         echo "arch=$ARCH" >> $GITHUB_OUTPUT
         echo "################################################################" && bash -c "echo ARCH=$ARCH"
 
-        export TIMESTAMP="$(date -u +%Y%m%d_%H%M%S)"
-        echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
-        echo "################################################################" && bash -c "echo TIMESTAMP=$TIMESTAMP"
-
         echo "keymatrix=$KEY-$RELEASE-$ARCH" >> $GITHUB_OUTPUT
 
     - name: update
@@ -111,7 +107,7 @@ runs:
       with:
         path: |
           ${{ inputs.compare_file0 }}
-        key: ${{ steps.env.outputs.keymatrix }}-${{ steps.env.outputs.timestamp }}
+        key: ${{ steps.env.outputs.keymatrix }}-${{ github.run_id }}
         restore-keys: |
           ${{ steps.env.outputs.keymatrix }}-
 
@@ -263,4 +259,4 @@ runs:
       with:
         path: |
           ${{ inputs.compare_file0 }}
-        key: ${{ steps.env.outputs.keymatrix }}-${{ steps.env.outputs.timestamp }}
+        key: ${{ steps.env.outputs.keymatrix }}-${{ github.run_id }}
