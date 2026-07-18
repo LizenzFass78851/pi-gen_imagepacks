@@ -194,6 +194,7 @@ runs:
       if: steps.compare.outputs.latest_version != 'true'
       uses: nick-fields/retry@v4
       with:
+        retry_on: error
         timeout_minutes: 360 # 6 hours
         max_attempts: ${{ steps.prepare.outputs.LEGACY_SOURCES_LIST == 'true' && 5 || 1 }}
         retry_wait_seconds: 30
