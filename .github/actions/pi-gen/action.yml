@@ -173,10 +173,10 @@ runs:
       if: steps.compare.outputs.latest_version != 'true'
       run: |
         # disable full build stage
-        if ls ./stage5; then
-          touch ./stage5/SKIP
-          touch ./stage5/SKIP_IMAGES
-        fi
+        for a in $(find stage5 -maxdepth 1 -type d); do
+          touch ./$a/SKIP
+          touch ./$a/SKIP_IMAGES
+        done
         # create config
         touch config
         echo IMG_NAME=raspios-${{ inputs.pi_release }}-${{ inputs.pi_arch }} >> config
