@@ -23,6 +23,12 @@ on:
         options: [ 'yes', 'no' ]
         type: choice
         default: 'yes'
+      include_broken:
+        description: 'Include Broken Releases?'
+        required: false
+        options: [ 'yes', 'no' ]
+        type: choice
+        default: 'no'
       recache:
         description: 'Delete Cache before Build?'
         required: false
@@ -73,6 +79,7 @@ jobs:
     steps:
 
       - name: Generate pi images
+        if: ${{ github.event.inputs.include_broken == 'yes' || (true) }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
@@ -99,6 +106,7 @@ jobs:
     steps:
 
       - name: Generate pi images
+        if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
