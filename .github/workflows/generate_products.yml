@@ -73,6 +73,7 @@ jobs:
     steps:
 
       - name: Generate pi images
+        if: ${{ matrix.release != 'bullseye' }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
@@ -99,6 +100,7 @@ jobs:
     steps:
 
       - name: Generate pi images
+        if: ${{ matrix.release != 'bullseye' }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
