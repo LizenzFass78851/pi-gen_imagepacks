@@ -81,6 +81,7 @@ jobs:
 
       - name: Generate pi images
         if: ${{ github.event.inputs.include_broken == 'yes' || (true) }}
+        #if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
@@ -107,7 +108,8 @@ jobs:
     steps:
 
       - name: Generate pi images
-        if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
+        if: ${{ github.event.inputs.include_broken == 'yes' || (true) }}
+        #if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
         uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
         with:
           pi_release: ${{ matrix.release }}
