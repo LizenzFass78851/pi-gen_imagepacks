@@ -191,6 +191,30 @@ runs:
         # fix other problems
         find . -type d -path "*bookshelf*" -print0 | head -n1 | xargs -0 rm -rf
 
+    - name: clone patches
+      if: steps.compare.outputs.latest_version != 'true'
+      uses: actions/checkout@v7
+      with:
+        path: ._patches
+        token: ${{ inputs.github_token }}
+        repository: ${{ inputs.repository }}
+        sparse-checkout: 'patch'
+        fetch-depth: 1
+
+    - name: patch
+      if: steps.compare.outputs.latest_version != 'true'
+      shell: bash
+      run: |
+        PATCH_DIR="._patches/patch/${{ steps.prepare-before-clone.outputs.pigen_branch }}"
+        if [[ ! -d "$PATCH_DIR" ]]; then
+          echo "No patches found for pi-gen branch ${{ steps.prepare-before-clone.outputs.pigen_branch }}"
+          exit 0
+        fi
+        while IFS= read -r -d '' PATCH_FILE; do
+          echo "Applying $PATCH_FILE"
+          patch --batch --forward -p0 < "$PATCH_FILE"
+        done < <(find "$PATCH_DIR" -maxdepth 1 -type f -name '*.patch' -print0 | sort -z)
+
     - name: generate
       if: steps.compare.outputs.latest_version != 'true'
       uses: nick-fields/retry@v4

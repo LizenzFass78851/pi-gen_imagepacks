@@ -25,6 +25,9 @@ See the [releases](https://github.com/LizenzFass78851/pi-gen_imagepacks/releases
 ### Build state: 
 [![generate_products](https://github.com/LizenzFass78851/pi-gen_imagepacks/actions/workflows/generate_products.yml/badge.svg?branch=main)](https://github.com/LizenzFass78851/pi-gen_imagepacks/actions/workflows/generate_products.yml)
 
+> [!TIP]
+> Create Patch for pi-gen after commit for one commit `git diff HEAD~1 --no-prefix > file.patch`
+
 > [!NOTE]
 > - The IMGs published there are split into 1.9 GB files each when the IMGs are bigger then 1.9 GB.
 >   - Put these back together under Linux using the cut command.

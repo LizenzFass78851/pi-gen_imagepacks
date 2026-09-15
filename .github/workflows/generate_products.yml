@@ -7,6 +7,7 @@ on:
       - '.github/workflows/generate_products.yml'
       - '.github/actions/pi-gen/**'
       - '.github/actions/clear_cache/**'
+      - 'patch/**'
   schedule:
     - cron: '34 14 */3 * 2'
   workflow_dispatch:
