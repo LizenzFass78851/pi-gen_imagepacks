@@ -211,6 +211,29 @@ runs:
           patch --batch --forward -p0 < "$PATCH_FILE"
         done < <(find "$PATCH_DIR" -maxdepth 1 -type f -name '*.patch' -print0 | sort -z)
 
+    - name: fix ext4 boot compatibility
+      if: steps.compare.outputs.latest_version != 'true'
+      shell: bash
+      working-directory: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
+      run: |
+        # Newer e2fsprogs may create ext4's orphan_file feature (FEATURE_C12).
+        # Older Raspberry Pi OS releases cannot fsck a filesystem containing it
+        # and consequently drop into systemd's emergency/rescue shell on boot.
+        # pi-gen already handles 64bit in this list; keep orphan_file disabled
+        # whenever the builder's mke2fs knows about it.
+        if grep -q 'orphan_file' export-image/prerun.sh; then
+          echo "pi-gen already disables orphan_file"
+        elif grep -q 'DISABLE_FEATURES=(64bit)' export-image/prerun.sh; then
+          sed -i 's/DISABLE_FEATURES=(64bit)/DISABLE_FEATURES=(64bit orphan_file)/' export-image/prerun.sh
+        elif grep -q 'for FEATURE in metadata_csum 64bit; do' export-image/prerun.sh; then
+          sed -i 's/for FEATURE in metadata_csum 64bit; do/for FEATURE in metadata_csum 64bit orphan_file; do/' export-image/prerun.sh
+        elif grep -q 'for FEATURE in 64bit; do' export-image/prerun.sh; then
+          sed -i 's/for FEATURE in 64bit; do/for FEATURE in 64bit orphan_file; do/' export-image/prerun.sh
+        else
+          echo "Unable to apply ext4 compatibility fix: unexpected pi-gen prerun.sh" >&2
+          exit 1
+        fi
+
     - name: generate
       if: steps.compare.outputs.latest_version != 'true'
       uses: nick-fields/retry@v4
