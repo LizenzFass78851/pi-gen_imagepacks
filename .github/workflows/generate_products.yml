@@ -49,14 +49,17 @@ jobs:
 
   clear_cache:
     runs-on: ubuntu-slim
-    if: ${{ github.repository == 'lizenzfass78851/pi-gen_imagepacks' }}
     permissions:
       actions: write
       contents: read
     steps:
 
+      - &clone
+        name: clone
+        uses: actions/checkout@v7
+
       - name: clear_cache
-        uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/clear_cache@main
+        uses: ./.github/actions/clear_cache
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           repository_onwer: ${{ github.repository_owner }}
@@ -75,14 +78,16 @@ jobs:
     env:           
       PI_ARCH: armhf
     needs: [ clear_cache ]
-    if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_armhf != 'no' }}
+    if: ${{ !cancelled() && needs.clear_cache.result != 'failure' && github.event.inputs.build_armhf != 'no' }}
 
     steps:
+
+      - *clone
 
       - name: Generate pi images
         if: ${{ github.event.inputs.include_broken == 'yes' || (true) }}
         #if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
-        uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
+        uses: ./.github/actions/pi-gen
         with:
           pi_release: ${{ matrix.release }}
           pi_arch: ${{ env.PI_ARCH }}
@@ -103,14 +108,16 @@ jobs:
     env:           
       PI_ARCH: arm64
     needs: [ clear_cache, build_armhf ]
-    if: ${{ !cancelled() && github.repository == 'lizenzfass78851/pi-gen_imagepacks' && needs.clear_cache.result != 'failure' && github.event.inputs.build_arm64 != 'no' }}
+    if: ${{ !cancelled() && needs.clear_cache.result != 'failure' && github.event.inputs.build_arm64 != 'no' }}
 
     steps:
+
+      - *clone
 
       - name: Generate pi images
         if: ${{ github.event.inputs.include_broken == 'yes' || (true) }}
         #if: ${{ github.event.inputs.include_broken == 'yes' || (matrix.release != 'bullseye') }}
-        uses: LizenzFass78851/pi-gen_imagepacks/.github/actions/pi-gen@main
+        uses: ./.github/actions/pi-gen
         with:
           pi_release: ${{ matrix.release }}
           pi_arch: ${{ env.PI_ARCH }}

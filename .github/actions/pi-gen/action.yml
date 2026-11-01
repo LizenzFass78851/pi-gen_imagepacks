@@ -51,9 +51,11 @@ runs:
       env:
         RELEASE: ${{ inputs.pi_release }}
         ARCH: ${{ inputs.pi_arch }}
+        PIGEN_SOURCE_DIR: pi-gen
       run: |
         printf 'keymatrix=%s-%s-%s\n' "${GITHUB_WORKFLOW%-*}" "$RELEASE" "$ARCH" >> "$GITHUB_OUTPUT"
         printf 'tagmatrix=%s-%s\n' "$ARCH" "$RELEASE" >> "$GITHUB_OUTPUT"
+        printf 'pigen_source_dir=%s\n' "$PIGEN_SOURCE_DIR" >> "$GITHUB_OUTPUT"
 
     - name: update
       shell: bash
@@ -156,12 +158,14 @@ runs:
       with:
         token: ${{ inputs.github_token }}
         repository: ${{ steps.prepare-before-clone.outputs.pigen_repository }}
-        ref: ${{ steps.prepare-before-clone.outputs.pigen_branch }}        
+        ref: ${{ steps.prepare-before-clone.outputs.pigen_branch }}
+        path: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
 
     - name: prepare
       id: prepare
       shell: bash
       if: steps.compare.outputs.latest_version != 'true'
+      working-directory: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
       run: |
         # disable full build stage
         for a in $(find stage5 -maxdepth 1 -type d); do
@@ -195,8 +199,9 @@ runs:
     - name: patch
       if: steps.compare.outputs.latest_version != 'true'
       shell: bash
+      working-directory: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
       run: |
-        PATCH_DIR="._patches/patch/${{ steps.prepare-before-clone.outputs.pigen_branch }}"
+        PATCH_DIR="../._patches/patch/${{ steps.prepare-before-clone.outputs.pigen_branch }}"
         if [[ ! -d "$PATCH_DIR" ]]; then
           echo "No patches found for pi-gen branch ${{ steps.prepare-before-clone.outputs.pigen_branch }}"
           exit 0
@@ -215,11 +220,12 @@ runs:
         max_attempts: ${{ steps.prepare.outputs.LEGACY_SOURCES_LIST == 'true' && 5 || 1 }}
         retry_wait_seconds: 30
         shell: bash
-        command: ./build.sh
+        command: cd "${{ steps.prepare_workflow.outputs.pigen_source_dir }}" && ./build.sh
 
     - name: after prepare
       shell: bash
       if: steps.compare.outputs.latest_version != 'true'
+      working-directory: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
       run: |
         # split bigger files
         cd ./deploy
@@ -251,6 +257,7 @@ runs:
         GH_TOKEN: ${{ inputs.github_token }}
         GH_OWNER_REPO: ${{ inputs.repository }}
       if: steps.compare.outputs.latest_version != 'true'
+      working-directory: ${{ steps.prepare_workflow.outputs.pigen_source_dir }}
       run: |
         # create release-notes
         cat > /tmp/release-notes.txt <<EOF
