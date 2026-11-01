@@ -67,6 +67,7 @@ jobs:
           recache: ${{ github.event.inputs.recache }}
 
   build_armhf:
+    name: Build pi-gen image (armhf / ${{ matrix.release }})
     container:
       image: debian:trixie-slim
       options: --privileged
@@ -97,6 +98,7 @@ jobs:
           repository: ${{ github.repository }}
 
   build_arm64:
+    name: Build pi-gen image (arm64 / ${{ matrix.release }})
     container:
       image: debian:trixie-slim
       options: --privileged
