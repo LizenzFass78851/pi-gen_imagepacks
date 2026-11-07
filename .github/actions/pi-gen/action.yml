@@ -66,7 +66,8 @@ runs:
         DEBIAN_FRONTEND: noninteractive
       shell: bash
       run: |
-        if [[ "${{ inputs.pi_release }}" = "buster"   ]] || \
+        if [[ "${{ inputs.pi_release }}" = "stretch"  ]] || \
+           [[ "${{ inputs.pi_release }}" = "buster"   ]] || \
            [[ "${{ inputs.pi_release }}" = "bullseye" ]] || \
            [[ "${{ inputs.pi_release }}" = "bookworm" ]]; then
           apt-get -y install --no-install-recommends qemu-user-static
@@ -114,7 +115,9 @@ runs:
       run: |
         LATEST_DEBIAN_RELEASE=$(curl -fsSL ${GITHUB_SERVER_URL##*/}/${PIGEN_REPOSITORY}/${PIGEN_READING_FILE} | grep -oP '(?<=\{RELEASE:-)[^}]+')
 
-        if [[ "${{ inputs.pi_release }}" = "${LATEST_DEBIAN_RELEASE}" ]]; then
+        if [[ "${{ inputs.pi_release }}" = "stretch" ]]; then
+          PIGEN_BRANCH="2019-04-08-raspbian-stretch"
+        elif [[ "${{ inputs.pi_release }}" = "${LATEST_DEBIAN_RELEASE}" ]]; then
           if [[ "${{ inputs.pi_arch }}" = "arm64" ]]; then
             PIGEN_BRANCH="arm64"
           else
@@ -243,7 +246,14 @@ runs:
         max_attempts: ${{ steps.prepare.outputs.LEGACY_SOURCES_LIST == 'true' && 5 || 1 }}
         retry_wait_seconds: 30
         shell: bash
-        command: cd "${{ steps.prepare_workflow.outputs.pigen_source_dir }}" && ./build.sh
+        command: |
+          # pi-gen checks for the binfmt_misc mount. In privileged containers
+          # the host mount is not always visible, even when qemu is installed.
+          # See https://github.com/RPi-Distro/pi-gen/issues/561 and #567.
+          modprobe binfmt_misc 2>/dev/null || true
+          mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc 2>/dev/null || true
+          cd "${{ steps.prepare_workflow.outputs.pigen_source_dir }}"
+          ./build.sh
 
     - name: after prepare
       shell: bash
@@ -298,7 +308,7 @@ runs:
           --draft=false \
           --latest=true \
           --repo "$GH_OWNER_REPO" \
-          $(find ./deploy/* -type f \( -name "*.img.xz" -o -name "*.info" \))
+          $(find ./deploy/* -type f \( -name "*.img.xz" -o -name "*.zip" -o -name "*.info" \))
 
     - name: cache_save
       if: steps.compare.outputs.latest_version != 'true'

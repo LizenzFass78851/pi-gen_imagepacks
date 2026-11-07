@@ -1,0 +1,13 @@
+diff --git stage3/00-install-packages/00-packages stage3/00-install-packages/00-packages
+index 61c652f..fa0f89d 100644
+--- stage3/00-install-packages/00-packages
++++ stage3/00-install-packages/00-packages
+@@ -7,7 +7,7 @@ raspberrypi-artwork
+ policykit-1
+ gvfs
+ rfkill
+-chromium-browser rpi-chromium-mods
++chromium-browser
+ gldriver-test
+ fonts-droid-fallback
+ fonts-liberation2
